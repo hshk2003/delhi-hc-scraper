@@ -1,180 +1,218 @@
 # Delhi High Court Case Scraper
 
-**Implementation of Task**
+A web application that automates case lookup from the Delhi High Court website using web scraping with automatic CAPTCHA solving capabilities.
 
-A web scraping application written in Flask that fetches case information automatically from the official Delhi High Court website. This task showcases skills in web automation, API, error handling, and creating intuitive interfaces for complicated web scraping processes.
+## Features
 
-## Task Overview
+- **Automated Case Search**: Search for cases by case number, type, and filing year
+- **Automatic CAPTCHA Solving**: Uses pytesseract OCR to automatically solve CAPTCHAs
+- **Comprehensive Case Details**: Extracts parties, hearing dates, court numbers, and PDF links
+- **User-Friendly Interface**: Clean Bootstrap-based web interface with loading indicators
+- **PDF Document Access**: Direct links to case documents when available
 
-**Challenge**: Create a system to extract case data programmatically from the Delhi High Court website, which offers a number of technical hurdles:
-- Interactive form submissions needing specific case types and years
-- CAPTCHA defense blocking robot access
-- Multi-step navigation to access real PDF documents
-- Compose DOM structure necessitating accurate element targeting
+## Technologies Used
 
-**Solution**: A full-stack web application employing browser automation to address the entire user experience, from form submission to document retrieval.
+- **Backend**: Python Flask
+- **Web Scraping**: Playwright (Chromium browser automation)
+- **CAPTCHA Solving**: pytesseract + Pillow (OCR with image preprocessing)
+- **Frontend**: HTML5, Bootstrap 5, JavaScript
+- **Template Engine**: Jinja2
 
-## Technical Implementation
+## Installation
 
-### Architecture Decisions
+### Prerequisites
 
-**HTTP Request Automation over Browser**: Preferred Playwright over conventional scraping libraries (BeautifulSoup, Scrapy) since the website loads dynamic content. Form interactions and transition between pages on the court website demand a complete browser context to be effective.
+1. **Python 3.7+**
+2. **Tesseract OCR** (for CAPTCHA solving)
+   - **Windows**: Download from [GitHub releases](https://github.com/UB-Mannheim/tesseract/wiki)
+   - **macOS**: `brew install tesseract`
+   - **Linux**: `sudo apt-get install tesseract-ocr`
 
-**Full-Stack Web Interface with Flask**: Used a simple web UI instead of a CLI utility to showcase full-stack feature and improve user experience for the non-technical crowd.
+### Setup Steps
 
-**Modular Design**: Split concerns into independent functions (CAPTCHA processing, form interaction, data extraction) to support testability and maintainability.
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd delhi-hc-scraper
+   ```
 
-### Technical Features of Note
+2. **Create virtual environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-#### 1. Smart CAPTCHA Solution
-```python
-def handle_captcha(page):
-    """Dual-mode CAPTCHA solving with fallback strategy"""
+3. **Install Python dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Install Playwright browsers**:
+   ```bash
+   playwright install chromium
+   ```
+
+5. **Create `.env` file**:
+   ```bash
+   FLASK_SECRET=your-secret-key-here
+   BASE_URL=https://delhihighcourt.nic.in
+   TESSERACT_PATH=C:\Program Files\Tesseract-OCR\tesseract.exe  # Windows only, if needed
+   ```
+
+## Dependencies
+
+Create a `requirements.txt` file with:
+
 ```
-- **Manual Mode**: Solves CAPTCHA images and asks for user input automatically
-- **Graceful Fallback**: Operates even without CAPTCHA
-
-#### 2. Multi-Step PDF Extraction
-```python
-```
-def get_actual_pdf_url(page, intermediate_url):
-    """Navigate through intermediate pages to extract direct PDF links"""
-```
-The court website has a two-step PDF access process. My solution:
-- Identifies intermediate PDF links in search results
-- Traverses intermediate pages keeping session state
-- Extracts final PDF URLs and resolves relative paths to absolute URLs
-- Inserts proper error handling and page state management
-
-#### 3. Centralized Selector Management
-```python
-SELECTORS: Dict[str, str] = {"}}}
-"case_type_dropdown": "#case_type",
-"case_number_input": "#case_number",
-#. more selectors
-```
-- Groups all CSS selectors into one configuration
-- Supports maintenance ease if website structure is altered
-- Integrates a validator for selectors
-
-#### 4. Strong Error Handling
-- Network timeout handling with customizable delay
-- Checking availability of elements prior to interaction
-- Through form validation with informative error messages
-- Degrading gracefully in case of absent optional elements
-
-### Technical Stack
-
-- **Backend**: Flask (web framework for Python)
-- **Automation**: Playwright (browser automation)
-- **Environment**: python-dotenv for configuration management
-- **CAPTCHA**: Solves CAPTCHA images and asks for user input automatically
-- **Frontend**: HTML templates styled with Bootstrap
-
-## Implementation Highlights
-
-### 1. Smart Form Interaction
-```python
-def scrape_case_details(case_number: str, case_type: str, filing_year: str):
-    # Manages dropdown choices, text input, form submission
-    page.select_option(SELECTORS["case_type_dropdown"], value=case_type)
-    page.fill(SELECTORS["case_number_input"], case_number)
-    page.select_option(SELECTORS["case_year_dropdown"], value=filing_year")
+flask
+playwright
+python-dotenv
+pytesseract
+pillow
+requests
 ```
 
-### 2. Fallback Data Extraction
-```python
-def safe_text(page, selector: str, fallback: str = "Not available") -> str:
-    """Defensive programming for unstable DOM elements"""
+## Usage
+
+1. **Start the application**:
+   ```bash
+   python app.py
+   ```
+
+2. **Open your browser** and navigate to:
+   ```
+   http://127.0.0.1:5000
+   ```
+
+3. **Search for a case**:
+   - Enter the case number (e.g., 123)
+   - Select case type (e.g., W.P.(C), CRL.A., etc.)
+   - Choose filing year (1951-2025)
+   - Click "Search Case"
+
+4. **Wait for results**:
+   - The application will automatically handle any CAPTCHAs
+   - Loading screen shows progress
+   - Results display case details, hearing dates, and PDF links
+
+## Project Structure
+
+```
+delhi-hc-scraper/
+├── app.py                 # Main Flask application
+├── templates/
+│   └── index.html        # Web interface template
+├── .env                  # Environment variables (create this)
+├── requirements.txt      # Python dependencies
+└── README.md            # This file
 ```
 
-### 3. Environment-Based Config Management
-Applied adequate configuration management for various deployment environments:
-- Development and production configurations
-- API key management for out-of-house services
-- Base URL configuration flexibility
+## Configuration
 
-## Problem-Solving Strategy
+### Environment Variables
 
-### Challenge 1: Court Website Structure Analysis
-- Manually inspected the court website form structure and data flow
-- Discovered the multi-step PDF access pattern using browser developer tools
-- Reverse-engineered the precise selectors necessary for robust automation
+- `FLASK_SECRET`: Secret key for Flask sessions
+- `BASE_URL`: Delhi High Court base URL (default: https://delhihighcourt.nic.in)
+- `TESSERACT_PATH`: Path to tesseract executable (Windows users may need this)
 
-### Challenge 2: CAPTCHA Handling Strategy
-- Research done on several CAPTCHA solving strategies
-- Used manual as well as automated solutions to provide flexibility
-- Included proper error handling in case of CAPTCHA failure
+### CAPTCHA Settings
 
-### Challenge 3: Reliability and Maintenance
-- Created selector testing features for maintenance over time
-- Implemented robust logging and error reporting
-- Applied defensive programming methods for volatile web elements
+The application automatically handles CAPTCHAs using:
+- Image preprocessing (grayscale, resize, contrast enhancement)
+- OCR with custom tesseract configuration
+- Up to 3 retry attempts per CAPTCHA
+- Automatic form submission after solving
 
-## Installation and Usage
+## How It Works
 
-### Quick Start
+1. **User submits search form** → Flask receives request
+2. **Playwright launches browser** → Navigates to court website
+3. **Form filling** → Enters case details into search form
+4. **CAPTCHA detection** → Checks for CAPTCHA presence
+5. **OCR processing** → Screenshots and processes CAPTCHA image
+6. **Automatic solving** → Fills CAPTCHA and submits form
+7. **Data extraction** → Scrapes case details from results
+8. **Response** → Returns formatted case information
+
+## Supported Case Types
+
+The application supports all Delhi High Court case types including:
+- W.P.(C) - Writ Petition (Civil)
+- CRL.A. - Criminal Appeal
+- CS(OS) - Civil Suit (Original Side)
+- FAO - First Appeal from Order
+- MAT. - Motor Accident Tribunal
+- And many more...
+
+## Limitations
+
+- **Rate Limiting**: Built-in delays to avoid being blocked
+- **CAPTCHA Accuracy**: OCR success depends on CAPTCHA complexity
+- **Browser Dependency**: Requires Chromium browser for automation
+- **Network Dependent**: Requires stable internet connection
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Tesseract not found**:
+   - Install Tesseract OCR
+   - Set `TESSERACT_PATH` in `.env` file (Windows)
+
+2. **Browser launch fails**:
+   - Run `playwright install chromium`
+   - Check system permissions
+
+3. **CAPTCHA solving fails**:
+   - CAPTCHAs may be too complex for OCR
+   - Network issues during image processing
+   - Try running again (automatic retry included)
+
+4. **No results found**:
+   - Verify case number, type, and year are correct
+   - Case might not exist in the database
+   - Check Delhi High Court website availability
+
+### Debug Mode
+
+Run with debugging enabled:
 ```bash
-# Setup environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\\Scripts\\activate
-
-# Install dependencies
-pip install flask playwright requests python-dotenv
-playwright install chromium
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your settings
-
-# Run application
-python app.py
+python app.py --debug
 ```
 
-### Environment Configuration
-```env
-FLASK_SECRET=your-secret-key
-BASE_URL=https://delhihighcourt.nic.in
-CAPTCHA_SOLVER=manual  # only manual mode is currently supported
-```
-
-### Testing Selectors
+Test selectors (useful when website changes):
 ```bash
 python app.py --test-selectors
 ```
 
-## Project Outcomes
+## Legal Disclaimer
 
-### Demonstrated Skills
-- **Web Scraping**: Complex multi-step automation with dynamic content
-- **API Integration**: Robust third-party service integration ready (manual CAPTCHA only in current version)
-- **Error Handling**: Edge case management across the board
-- **User Experience**: Clean design for technical functionality
-- **Code Organization**: Modular, maintainable code
-- **Configuration Management**: Environment-based configuration
-- **Documentation**: Clear technical documentation
+This tool is for educational and research purposes only. Users are responsible for:
+- Complying with the Delhi High Court website's terms of service
+- Using the tool ethically and responsibly
+- Verifying information through official channels
+- Respecting rate limits and server resources
 
-### Challenges Overcome
-1. **Dynamic Content**: Correctly processed JavaScript-heavy forms
-2. **Anti-Bot Measures**: Used CAPTCHA solving without causing blocks
-3. **Complex Navigation**: Automated retrieval of multi-page documents
-4. **Reliability**: Implemented robust error handling for flaky website elements
-5. **User Experience**: Made advanced automation available via web interface
+## Contributing
 
-## Technical Decisions Justified
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-**Why Playwright instead of Selenium?**: more consistent element interaction, and updated async/await support.
+## License
 
-**Why Flask instead of FastAPI?**: Easier setup for this scale, improved template engine support, and easier session handling.
+This project is for educational purposes. Please respect the Delhi High Court's terms of service and use responsibly.
 
-**Why Centralized Selectors?**: Demonstrates thought on maintainability and the nature of web scraping production systems.
+## Support
 
-## Code Quality
+For issues or questions:
+1. Check the troubleshooting section
+2. Review error logs in the console
+3. Ensure all dependencies are properly installed
+4. Verify environment configuration
 
-- **Error Handling**: Exhaustive exception handling
-- **Logging**: Ordered logging to facilitate debugging and monitoring
-- **Configuration**: Environment-driven settings management
-- **Testing**: Integrated selector validation tools
-- **Documentation**: Inline comments describing intricate logic
+---
 
-This solution attests to the capability to address practical web scraping challenges while developing maintainable, user-centric software solutions.
+**Note**: This application automates interaction with a government website. Always ensure your usage complies with applicable laws and the website's terms of service.
