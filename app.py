@@ -4,17 +4,21 @@ import sys
 import time
 from datetime import datetime
 from typing import Dict
-import requests
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, url_for
 from playwright.sync_api import sync_playwright
+import pytesseract
+from PIL import Image, ImageEnhance, ImageFilter
+import io
 
 
 load_dotenv()
 FLASK_SECRET = os.getenv("FLASK_SECRET", "dev-fallback")
 BASE_URL = os.getenv("BASE_URL", "https://delhihighcourt.nic.in")
-CAPTCHA_SOLVER = os.getenv("CAPTCHA_SOLVER", "manual")  # manual | 2captcha
-TWOCAPTCHA_KEY = os.getenv("TWOCAPTCHA_KEY", "")
+# Set tesseract path if needed (Windows users typically need this)
+TESSERACT_PATH = os.getenv("TESSERACT_PATH", "")
+if TESSERACT_PATH:
+    pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
@@ -32,8 +36,6 @@ SELECTORS: Dict[str, str] = {
     "pdf_link": "#caseTable > tbody > tr:nth-child(1) > td:nth-child(2) > a",
     "captcha_img": "#captcha-code",
     "captcha_input": "#captchaInput",
-
-
 }
 
 def row_based_selector(row, nth):
@@ -122,17 +124,16 @@ def scrape_case_details(case_number: str, case_type: str, filing_year: str):
             page.goto(f"{BASE_URL}/app/get-case-type-status", timeout=30000)
             page.wait_for_load_state("networkidle")
 
-            # Handle CAPTCHA if it shows up 
-            if not handle_captcha(page):
-                raise Exception("CAPTCHA not solved")
-
-            # Fill out the search form
+            # Fill out the search form first
             page.select_option(SELECTORS["case_type_dropdown"], value=case_type)
             page.fill(SELECTORS["case_number_input"], case_number)
             page.select_option(SELECTORS["case_year_dropdown"], value=filing_year)
 
-            # Submit and wait for results
-            page.click(SELECTORS["submit_button"])
+            # Handle CAPTCHA if it shows up (this will also submit the form)
+            if not handle_captcha(page):
+                raise Exception("CAPTCHA not solved")
+
+            # Wait for results to load
             page.wait_for_load_state("networkidle")
             time.sleep(2) # Give results time to load completely
 
@@ -141,84 +142,109 @@ def scrape_case_details(case_number: str, case_type: str, filing_year: str):
             browser.close()
 
 
+def preprocess_captcha_image(image_bytes):
+    """
+    Preprocess CAPTCHA image to improve OCR accuracy
+    """
+    # Open image from bytes
+    image = Image.open(io.BytesIO(image_bytes))
+    
+    # Convert to grayscale
+    image = image.convert('L')
+    
+    # Resize image to make text larger (improves OCR)
+    width, height = image.size
+    image = image.resize((width * 3, height * 3), Image.LANCZOS)
+    
+    # Enhance contrast
+    enhancer = ImageEnhance.Contrast(image)
+    image = enhancer.enhance(2.0)
+    
+    # Apply threshold to make it binary (black and white)
+    threshold = 128
+    image = image.point(lambda x: 0 if x < threshold else 255, '1')
+    
+    # Apply slight blur to smooth edges
+    image = image.filter(ImageFilter.MedianFilter(size=3))
+    
+    return image
+
+
+def solve_captcha_with_ocr(page, img_locator, inp_locator, max_attempts=3):
+    """
+    Solve CAPTCHA using pytesseract OCR with image preprocessing
+    """
+    for attempt in range(max_attempts):
+        try:
+            print(f"CAPTCHA solving attempt {attempt + 1}/{max_attempts}")
+            
+            # Get CAPTCHA image as bytes
+            img_bytes = img_locator.screenshot()
+            
+            # Preprocess image for better OCR
+            processed_image = preprocess_captcha_image(img_bytes)
+            
+            # Configure tesseract for better CAPTCHA recognition
+            custom_config = r'--oem 3 --psm 8 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+            
+            # Extract text using OCR
+            captcha_text = pytesseract.image_to_string(processed_image, config=custom_config).strip()
+            
+            # Clean the extracted text (remove spaces, special characters)
+            captcha_text = ''.join(char for char in captcha_text if char.isalnum())
+            
+            print(f"Extracted CAPTCHA text: '{captcha_text}'")
+            
+            if len(captcha_text) >= 4:  # Most CAPTCHAs are at least 4 characters
+                # Fill the CAPTCHA input
+                inp_locator.fill(captcha_text)
+                
+                # Click the search button to submit the form with CAPTCHA
+                search_button = page.locator(SELECTORS["submit_button"])
+                if search_button.count() > 0:
+                    search_button.click()
+                    time.sleep(3)  # Wait for validation
+                    
+                    # Check if CAPTCHA was accepted by looking for results or if CAPTCHA input disappeared
+                    if inp_locator.count() == 0 or page.locator(SELECTORS["results_table"]).count() > 0:
+                        print("CAPTCHA solved successfully!")
+                        return True
+                    else:
+                        print(f"CAPTCHA attempt {attempt + 1} failed, trying again...")
+                else:
+                    print("Search button not found")
+                    return False
+            else:
+                print(f"Extracted text too short: '{captcha_text}', trying again...")
+                
+        except Exception as e:
+            print(f"Error in CAPTCHA attempt {attempt + 1}: {str(e)}")
+            
+        # Wait before next attempt
+        if attempt < max_attempts - 1:
+            time.sleep(2)
+    
+    print("Failed to solve CAPTCHA after all attempts")
+    return False
+
+
 def handle_captcha(page):
-    """Try to solve CAPTCHA if present, return True if successful or no CAPTCHA"""
+    """Try to solve CAPTCHA if present using OCR, return True if successful or no CAPTCHA"""
     img = page.locator(SELECTORS["captcha_img"])
     inp = page.locator(SELECTORS["captcha_input"])
+    
     if img.count() == 0 or inp.count() == 0:
+        print("No CAPTCHA found")
         return True  # no captcha
-
-    if CAPTCHA_SOLVER == "2captcha" and TWOCAPTCHA_KEY:
-        return solve_with_2captcha(page, img)
-    else:
-        return solve_manually(page, img, inp)
-
-
-def solve_manually(page, img, inp):
-    """Save CAPTCHA image and ask user to solve it"""
-    import platform, subprocess
-    from pathlib import Path
-    img_path = Path('C:/Users/DELL/OneDrive/Desktop/delhi-hc-scraper/captcha_images/captcha_img.png')
-    os.makedirs("captcha_images", exist_ok=True)
-    img.screenshot(path=img_path)
     
-    # Try to open image automatically for user
-    system = platform.system()
-    if system == "Windows":
-        os.startfile(img_path)
-    elif system == "Darwin":
-        subprocess.run(["open", img_path])
-    else:
-        subprocess.run(["xdg-open", img_path])
-    
-    solution = input("Enter CAPTCHA text (or 'skip'): ").strip()
-    if not solution or solution.lower() == "skip":
-        return False
-    inp.fill(solution)
-    inp.press("Enter")
-    time.sleep(2)
-    return True
-
-
-def solve_with_2captcha(page, img_locator):
-    """Use 2captcha service to solve CAPTCHA automatically"""
-    if not TWOCAPTCHA_KEY:
-        print("[WARN] 2Captcha key missing – skipping")
-        return False
-
-    # Upload CAPTCHA image to 2captcha
-    img_bytes = img_locator.screenshot()
-    files = {"file": ("captcha.png", img_bytes, "image/png")}
-    data = {"key": TWOCAPTCHA_KEY, "method": "post"}
-    upload = requests.post("http://2captcha.com/in.php", files=files, data=data)
-    if "OK|" not in upload.text:
-        print("[2Captcha] upload failed:", upload.text)
-        return False
-    captcha_id = upload.text.split("|")[1]
-
-    # Poll for solution - usually takes 10-30 seconds
-    for _ in range(24):  # max 2 minutes
-        time.sleep(5)
-        res = requests.get(
-            "http://2captcha.com/res.php",
-            params={"key": TWOCAPTCHA_KEY, "action": "get", "id": captcha_id},
-        )
-        if "OK|" in res.text:
-            solution = res.text.split("|")[1]
-            page.locator(SELECTORS["captcha_input"]).fill(solution)
-            page.locator(SELECTORS["captcha_input"]).press("Enter")
-            time.sleep(2)
-            return True
-    print("[2Captcha] timeout")
-    return False
+    print("CAPTCHA detected, attempting to solve with OCR...")
+    return solve_captcha_with_ocr(page, img, inp)
 
 
 def extract_case_data(page, case_number, case_type, filing_year):
     """Extract case info from results page"""
     import re
-    captcha_dir = "captcha_images"
-    for f in os.listdir(captcha_dir):
-        os.remove(os.path.join(captcha_dir, f))
+    
     table = page.locator(SELECTORS["results_table"])
     
     # Get first result row
@@ -227,7 +253,6 @@ def extract_case_data(page, case_number, case_type, filing_year):
     # Extract basic info from table cells
     parties = safe_text(row, "td:nth-child(3)")
     dates = safe_text(row, "td:nth-child(4)")
-
 
     # Parse dates information
     next_date = "Not available"
@@ -310,7 +335,7 @@ def get_actual_pdf_url(page, intermediate_url):
         else:
             print("No actual PDF link found on intermediate page")
         
-        # Navigate back to the original results page (optional)
+        # Navigate back to the original results page
         try:
             page.goto(current_url, timeout=10000)
             page.wait_for_load_state("networkidle")
