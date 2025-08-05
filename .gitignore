@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+
+# Environment variables
+.env
+
+# Captcha images
+captcha_images/
+
+# IDE
+.idea/
+.vscode/
+
+# System
+.DS_Store
+
+# Logs
+*.log

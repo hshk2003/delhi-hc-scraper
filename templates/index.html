@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delhi High Court - Case Lookup</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3>Delhi High Court</h3>
+                        <p class="mb-0">Case Number Lookup</p>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Flash Messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else 'info' }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert">.</button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <!-- Search Form -->
+                        <form action="/search" method="POST">
+                            <div class="mb-3">
+                                <label for="case_number" class="form-label">Case Number <span class="text-danger">*</span></label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="case_number" 
+                                    name="case_number" 
+                                    placeholder="Enter case number (e.g., 123)"
+                                    required
+                                    value="{{ request.form.case_number if request.form.case_number else '' }}"
+                                >
+                                <div class="form-text">Enter the case number without year or type prefix</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="case_type" class="form-label">Case Type <span class="text-danger">*</span></label>
+                                <select 
+                                    class="form-select" 
+                                    id="case_type" 
+                                    name="case_type" 
+                                    required
+                                >
+                                    <option value="">Select case type</option>
+                                    <option value="ADMIN.REPORT" {{ 'selected' if request.form.case_type == 'ADMIN.REPORT' else '' }}>ADMIN.REPORT</option>
+                                    <option value="ARB.A." {{ 'selected' if request.form.case_type == 'ARB.A.' else '' }}>ARB.A.</option>
+                                    <option value="ARB. A. (COMM.)" {{ 'selected' if request.form.case_type == 'ARB. A. (COMM.)' else '' }}>ARB. A. (COMM.)</option>
+                                    <option value="ARB.P." {{ 'selected' if request.form.case_type == 'ARB.P.' else '' }}>ARB.P.</option>
+                                    <option value="BAIL APPLN." {{ 'selected' if request.form.case_type == 'BAIL APPLN.' else '' }}>BAIL APPLN.</option>
+                                    <option value="CA" {{ 'selected' if request.form.case_type == 'CA' else '' }}>CA</option>
+                                    <option value="CAVEAT(CO.)" {{ 'selected' if request.form.case_type == 'CAVEAT(CO.)' else '' }}>CAVEAT(CO.)</option>
+                                    <option value="CC(ARB.)" {{ 'selected' if request.form.case_type == 'CC(ARB.)' else '' }}>CC(ARB.)</option>
+                                    <option value="CCP(CO.)" {{ 'selected' if request.form.case_type == 'CCP(CO.)' else '' }}>CCP(CO.)</option>
+                                    <option value="CCP(REF)" {{ 'selected' if request.form.case_type == 'CCP(REF)' else '' }}>CCP(REF)</option>
+                                    <option value="CEAC" {{ 'selected' if request.form.case_type == 'CEAC' else '' }}>CEAC</option>
+                                    <option value="CEAR" {{ 'selected' if request.form.case_type == 'CEAR' else '' }}>CEAR</option>
+                                    <option value="CMI" {{ 'selected' if request.form.case_type == 'CMI' else '' }}>CMI</option>
+                                    <option value="CM(M)" {{ 'selected' if request.form.case_type == 'CM(M)' else '' }}>CM(M)</option>
+                                    <option value="C.O." {{ 'selected' if request.form.case_type == 'C.O.' else '' }}>C.O.</option>
+                                    <option value="CO.APP." {{ 'selected' if request.form.case_type == 'CO.APP.' else '' }}>CO.APP.</option>
+                                    <option value="CO.APPL.(C)" {{ 'selected' if request.form.case_type == 'CO.APPL.(C)' else '' }}>CO.APPL.(C)</option>
+                                    <option value="CO.APPL.(M)" {{ 'selected' if request.form.case_type == 'CO.APPL.(M)' else '' }}>CO.APPL.(M)</option>
+                                    <option value="CO.EX." {{ 'selected' if request.form.case_type == 'CO.EX.' else '' }}>CO.EX.</option>
+                                    <option value="CO.PET." {{ 'selected' if request.form.case_type == 'CO.PET.' else '' }}>CO.PET.</option>
+                                    <option value="CRL.A." {{ 'selected' if request.form.case_type == 'CRL.A.' else '' }}>CRL.A.</option>
+                                    <option value="CRL.L.P." {{ 'selected' if request.form.case_type == 'CRL.L.P.' else '' }}>CRL.L.P.</option>
+                                    <option value="CRL.M.C." {{ 'selected' if request.form.case_type == 'CRL.M.C.' else '' }}>CRL.M.C.</option>
+                                    <option value="CRL.M.(CO.)" {{ 'selected' if request.form.case_type == 'CRL.M.(CO.)' else '' }}>CRL.M.(CO.)</option>
+                                    <option value="CRL.M.I." {{ 'selected' if request.form.case_type == 'CRL.M.I.' else '' }}>CRL.M.I.</option>
+                                    <option value="CRL.O." {{ 'selected' if request.form.case_type == 'CRL.O.' else '' }}>CRL.O.</option>
+                                    <option value="CRL.REF." {{ 'selected' if request.form.case_type == 'CRL.REF.' else '' }}>CRL.REF.</option>
+                                    <option value="CRL.REV.P." {{ 'selected' if request.form.case_type == 'CRL.REV.P.' else '' }}>CRL.REV.P.</option>
+                                    <option value="C.R.P." {{ 'selected' if request.form.case_type == 'C.R.P.' else '' }}>C.R.P.</option>
+                                    <option value="CS(COMM)" {{ 'selected' if request.form.case_type == 'CS(COMM)' else '' }}>CS(COMM)</option>
+                                    <option value="CS(OS)" {{ 'selected' if request.form.case_type == 'CS(OS)' else '' }}>CS(OS)</option>
+                                    <option value="EFA(OS)" {{ 'selected' if request.form.case_type == 'EFA(OS)' else '' }}>EFA(OS)</option>
+                                    <option value="EX.P." {{ 'selected' if request.form.case_type == 'EX.P.' else '' }}>EX.P.</option>
+                                    <option value="FAO" {{ 'selected' if request.form.case_type == 'FAO' else '' }}>FAO</option>
+                                    <option value="FAO(OS)" {{ 'selected' if request.form.case_type == 'FAO(OS)' else '' }}>FAO(OS)</option>
+                                    <option value="I.A." {{ 'selected' if request.form.case_type == 'I.A.' else '' }}>I.A.</option>
+                                    <option value="MAC.APP." {{ 'selected' if request.form.case_type == 'MAC.APP.' else '' }}>MAC.APP.</option>
+                                    <option value="MAT." {{ 'selected' if request.form.case_type == 'MAT.' else '' }}>MAT.</option>
+                                    <option value="O.M.P." {{ 'selected' if request.form.case_type == 'O.M.P.' else '' }}>O.M.P.</option>
+                                    <option value="RFA" {{ 'selected' if request.form.case_type == 'RFA' else '' }}>RFA</option>
+                                    <option value="RFA(OS)" {{ 'selected' if request.form.case_type == 'RFA(OS)' else '' }}>RFA(OS)</option>
+                                    <option value="RSA" {{ 'selected' if request.form.case_type == 'RSA' else '' }}>RSA</option>
+                                    <option value="W.P.(C)" {{ 'selected' if request.form.case_type == 'W.P.(C)' else '' }}>W.P.(C)</option>
+                                    <option value="W.P.(CRL)" {{ 'selected' if request.form.case_type == 'W.P.(CRL)' else '' }}>W.P.(CRL)</option>
+                                </select>
+                                <div class="form-text">Select the type of case from court records</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="filing_year" class="form-label">Filing Year <span class="text-danger">*</span></label>
+                                <select 
+                                    class="form-select" 
+                                    id="filing_year" 
+                                    name="filing_year" 
+                                    required
+                                >
+                                    <option value="">Select filing year</option>
+                                    <option value="2025" {{ 'selected' if request.form.filing_year == '2025' else '' }}>2025</option>
+                                    <option value="2024" {{ 'selected' if request.form.filing_year == '2024' else '' }}>2024</option>
+                                    <option value="2023" {{ 'selected' if request.form.filing_year == '2023' else '' }}>2023</option>
+                                    <option value="2022" {{ 'selected' if request.form.filing_year == '2022' else '' }}>2022</option>
+                                    <option value="2021" {{ 'selected' if request.form.filing_year == '2021' else '' }}>2021</option>
+                                    <option value="2020" {{ 'selected' if request.form.filing_year == '2020' else '' }}>2020</option>
+                                    <option value="2019" {{ 'selected' if request.form.filing_year == '2019' else '' }}>2019</option>
+                                    <option value="2018" {{ 'selected' if request.form.filing_year == '2018' else '' }}>2018</option>
+                                    <option value="2017" {{ 'selected' if request.form.filing_year == '2017' else '' }}>2017</option>
+                                    <option value="2016" {{ 'selected' if request.form.filing_year == '2016' else '' }}>2016</option>
+                                    <option value="2015" {{ 'selected' if request.form.filing_year == '2015' else '' }}>2015</option>
+                                    <option value="2014" {{ 'selected' if request.form.filing_year == '2014' else '' }}>2014</option>
+                                    <option value="2013" {{ 'selected' if request.form.filing_year == '2013' else '' }}>2013</option>
+                                    <option value="2012" {{ 'selected' if request.form.filing_year == '2012' else '' }}>2012</option>
+                                    <option value="2011" {{ 'selected' if request.form.filing_year == '2011' else '' }}>2011</option>
+                                    <option value="2010" {{ 'selected' if request.form.filing_year == '2010' else '' }}>2010</option>
+                                    <option value="2009" {{ 'selected' if request.form.filing_year == '2009' else '' }}>2009</option>
+                                    <option value="2008" {{ 'selected' if request.form.filing_year == '2008' else '' }}>2008</option>
+                                    <option value="2007" {{ 'selected' if request.form.filing_year == '2007' else '' }}>2007</option>
+                                    <option value="2006" {{ 'selected' if request.form.filing_year == '2006' else '' }}>2006</option>
+                                    <option value="2005" {{ 'selected' if request.form.filing_year == '2005' else '' }}>2005</option>
+                                    <option value="2004" {{ 'selected' if request.form.filing_year == '2004' else '' }}>2004</option>
+                                    <option value="2003" {{ 'selected' if request.form.filing_year == '2003' else '' }}>2003</option>
+                                    <option value="2002" {{ 'selected' if request.form.filing_year == '2002' else '' }}>2002</option>
+                                    <option value="2001" {{ 'selected' if request.form.filing_year == '2001' else '' }}>2001</option>
+                                    <option value="2000" {{ 'selected' if request.form.filing_year == '2000' else '' }}>2000</option>
+                                    <option value="1999" {{ 'selected' if request.form.filing_year == '1999' else '' }}>1999</option>
+                                    <option value="1998" {{ 'selected' if request.form.filing_year == '1998' else '' }}>1998</option>
+                                    <option value="1997" {{ 'selected' if request.form.filing_year == '1997' else '' }}>1997</option>
+                                    <option value="1996" {{ 'selected' if request.form.filing_year == '1996' else '' }}>1996</option>
+                                    <option value="1995" {{ 'selected' if request.form.filing_year == '1995' else '' }}>1995</option>
+                                    <option value="1994" {{ 'selected' if request.form.filing_year == '1994' else '' }}>1994</option>
+                                    <option value="1993" {{ 'selected' if request.form.filing_year == '1993' else '' }}>1993</option>
+                                    <option value="1992" {{ 'selected' if request.form.filing_year == '1992' else '' }}>1992</option>
+                                    <option value="1991" {{ 'selected' if request.form.filing_year == '1991' else '' }}>1991</option>
+                                    <option value="1990" {{ 'selected' if request.form.filing_year == '1990' else '' }}>1990</option>
+                                    <option value="1989" {{ 'selected' if request.form.filing_year == '1989' else '' }}>1989</option>
+                                    <option value="1988" {{ 'selected' if request.form.filing_year == '1988' else '' }}>1988</option>
+                                    <option value="1987" {{ 'selected' if request.form.filing_year == '1987' else '' }}>1987</option>
+                                    <option value="1986" {{ 'selected' if request.form.filing_year == '1986' else '' }}>1986</option>
+                                    <option value="1985" {{ 'selected' if request.form.filing_year == '1985' else '' }}>1985</option>
+                                    <option value="1984" {{ 'selected' if request.form.filing_year == '1984' else '' }}>1984</option>
+                                    <option value="1983" {{ 'selected' if request.form.filing_year == '1983' else '' }}>1983</option>
+                                    <option value="1982" {{ 'selected' if request.form.filing_year == '1982' else '' }}>1982</option>
+                                    <option value="1981" {{ 'selected' if request.form.filing_year == '1981' else '' }}>1981</option>
+                                    <option value="1980" {{ 'selected' if request.form.filing_year == '1980' else '' }}>1980</option>
+                                    <option value="1979" {{ 'selected' if request.form.filing_year == '1979' else '' }}>1979</option>
+                                    <option value="1978" {{ 'selected' if request.form.filing_year == '1978' else '' }}>1978</option>
+                                    <option value="1977" {{ 'selected' if request.form.filing_year == '1977' else '' }}>1977</option>
+                                    <option value="1976" {{ 'selected' if request.form.filing_year == '1976' else '' }}>1976</option>
+                                    <option value="1975" {{ 'selected' if request.form.filing_year == '1975' else '' }}>1975</option>
+                                    <option value="1974" {{ 'selected' if request.form.filing_year == '1974' else '' }}>1974</option>
+                                    <option value="1973" {{ 'selected' if request.form.filing_year == '1973' else '' }}>1973</option>
+                                    <option value="1972" {{ 'selected' if request.form.filing_year == '1972' else '' }}>1972</option>
+                                    <option value="1971" {{ 'selected' if request.form.filing_year == '1971' else '' }}>1971</option>
+                                    <option value="1970" {{ 'selected' if request.form.filing_year == '1970' else '' }}>1970</option>
+                                    <option value="1969" {{ 'selected' if request.form.filing_year == '1969' else '' }}>1969</option>
+                                    <option value="1968" {{ 'selected' if request.form.filing_year == '1968' else '' }}>1968</option>
+                                    <option value="1967" {{ 'selected' if request.form.filing_year == '1967' else '' }}>1967</option>
+                                    <option value="1966" {{ 'selected' if request.form.filing_year == '1966' else '' }}>1966</option>
+                                    <option value="1965" {{ 'selected' if request.form.filing_year == '1965' else '' }}>1965</option>
+                                    <option value="1964" {{ 'selected' if request.form.filing_year == '1964' else '' }}>1964</option>
+                                    <option value="1963" {{ 'selected' if request.form.filing_year == '1963' else '' }}>1963</option>
+                                    <option value="1962" {{ 'selected' if request.form.filing_year == '1962' else '' }}>1962</option>
+                                    <option value="1961" {{ 'selected' if request.form.filing_year == '1961' else '' }}>1961</option>
+                                    <option value="1960" {{ 'selected' if request.form.filing_year == '1960' else '' }}>1960</option>
+                                    <option value="1959" {{ 'selected' if request.form.filing_year == '1959' else '' }}>1959</option>
+                                    <option value="1958" {{ 'selected' if request.form.filing_year == '1958' else '' }}>1958</option>
+                                    <option value="1957" {{ 'selected' if request.form.filing_year == '1957' else '' }}>1957</option>
+                                    <option value="1956" {{ 'selected' if request.form.filing_year == '1956' else '' }}>1956</option>
+                                    <option value="1955" {{ 'selected' if request.form.filing_year == '1955' else '' }}>1955</option>
+                                    <option value="1954" {{ 'selected' if request.form.filing_year == '1954' else '' }}>1954</option>
+                                    <option value="1953" {{ 'selected' if request.form.filing_year == '1953' else '' }}>1953</option>
+                                    <option value="1952" {{ 'selected' if request.form.filing_year == '1952' else '' }}>1952</option>
+                                    <option value="1951" {{ 'selected' if request.form.filing_year == '1951' else '' }}>1951</option>
+                                </select>
+                                <div class="form-text">Select the year when the case was filed (1951-2025)</div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Search Case</button>
+                            </div>
+                        </form>
+                        
+                        <!-- Results Section (if any) -->
+                        {% if results %}
+                        <hr class="my-4">
+                        <div class="results-section">
+                            <h5>Search Results:</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <p><strong>Case Number:</strong> {{ results.case_number }}</p>
+                                    <p><strong>Case Type:</strong> {{ results.case_type }}</p>
+                                    <p><strong>Filing Year:</strong> {{ results.filing_year }}</p>
+                                    <p><strong>Status:</strong> {{ results.status }}</p>
+                                    
+                                    {% if results.found %}
+                                    <hr>
+                                    <h6>Case Details:</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Parties:</strong><br>{{ results.parties }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-4">
+                                            <p><strong>Next Hearing:</strong><br>{{ results.next_hearing_date }}</p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p><strong>Last Hearing:</strong><br>{{ results.last_hearing_date }}</p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p><strong>Court No.:</strong><br>{{ results.court_no }}</p>
+                                        </div>
+                                    </div>
+                                    {% if results.pdf_url %}
+                                    <p class="mt-3">
+                                        <strong>Latest PDF:</strong> 
+                                        <a href="{{ results.pdf_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            View Document
+                                        </a>
+                                    </p>
+                                    {% else %}
+                                    <p class="mt-3"><strong>Latest PDF:</strong> Not available</p>
+                                    {% endif %}
+                                    {% endif %}
+                                    
+                                    {% if not results.found %}
+                                        <div class="alert alert-warning">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                            No case details found or search functionality is under development.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+<!-- ... existing code ... -->
+                        
+                    </div>
+                    <div class="card-footer text-center text-muted">
+                        <small>For official court records, visit the court directly</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
