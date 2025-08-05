@@ -32,7 +32,6 @@ def handle_captcha(page):
     """Dual-mode CAPTCHA solving with fallback strategy"""
 ```
 - **Manual Mode**: Solves CAPTCHA images and asks for user input automatically
-- **Automated Mode**: Utilizes 2captcha API to solve CAPTCHA automatically
 - **Graceful Fallback**: Operates even without CAPTCHA
 
 #### 2. Multi-Step PDF Extraction
@@ -69,7 +68,7 @@ SELECTORS: Dict[str, str] = {"}}}
 - **Backend**: Flask (web framework for Python)
 - **Automation**: Playwright (browser automation)
 - **Environment**: python-dotenv for configuration management
-- **CAPTCHA**: Integration with 2captcha API
+- **CAPTCHA**: Solves CAPTCHA images and asks for user input automatically
 - **Frontend**: HTML templates styled with Bootstrap
 
 ## Implementation Highlights
@@ -136,8 +135,7 @@ python app.py
 ```env
 FLASK_SECRET=your-secret-key
 BASE_URL=https://delhihighcourt.nic.in
-CAPTCHA_SOLVER=manual  # or 2captcha
-TWOCAPTCHA_KEY=your-api-key-if-using-2captcha
+CAPTCHA_SOLVER=manual  # only manual mode is currently supported
 ```
 
 ### Testing Selectors
@@ -149,7 +147,7 @@ python app.py --test-selectors
 
 ### Demonstrated Skills
 - **Web Scraping**: Complex multi-step automation with dynamic content
-- **API Integration**: Third-party service integration (2captcha)
+- **API Integration**: Robust third-party service integration ready (manual CAPTCHA only in current version)
 - **Error Handling**: Edge case management across the board
 - **User Experience**: Clean design for technical functionality
 - **Code Organization**: Modular, maintainable code
@@ -169,24 +167,10 @@ python app.py --test-selectors
 
 **Why Flask instead of FastAPI?**: Easier setup for this scale, improved template engine support, and easier session handling.
 
-**Why Manual CAPTCHA Option?**: Offers backup when automated services don't work, shows comprehension of user experience implications.
-
 **Why Centralized Selectors?**: Demonstrates thought on maintainability and the nature of web scraping production systems.
-
-## Future Enhancements
-
-If it were a production system, I would add:
-- Storage of scraped case data in a database
-- Bulk case processing with queue handling
-- Rate limiting to be courteous to the court website
-- Caching layer to reduce redundant requests
-- API endpoints for accessing programs
-- Docker containerization for deployment
-- Monitoring and alerting for website changes
 
 ## Code Quality
 
-- **Type Hints**: Employed across for improved code documentation
 - **Error Handling**: Exhaustive exception handling
 - **Logging**: Ordered logging to facilitate debugging and monitoring
 - **Configuration**: Environment-driven settings management
