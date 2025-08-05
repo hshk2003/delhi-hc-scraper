@@ -118,7 +118,7 @@ def search():
 def scrape_case_details(case_number: str, case_type: str, filing_year: str):
     with sync_playwright() as p:
         # Keep browser visible for debugging, add delay to avoid getting blocked
-        browser = p.chromium.launch(headless=False, slow_mo=800)
+        browser = p.chromium.launch(headless=True, slow_mo=800)
         page = browser.new_page()
         try:
             page.goto(f"{BASE_URL}/app/get-case-type-status", timeout=30000)
