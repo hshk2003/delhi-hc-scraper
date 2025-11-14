@@ -1,0 +1,16 @@
+services:
+     - type: web
+       name: delhi-hc-scraper
+       env: python
+       buildCommand: |
+         pip install -r requirements.txt
+         playwright install chromium
+         playwright install-deps chromium
+       startCommand: gunicorn app:app
+       envVars:
+         - key: FLASK_SECRET
+           generateValue: true
+         - key: BASE_URL
+           value: https://delhihighcourt.nic.in
+         - key: PYTHON_VERSION
+           value: 3.11.0

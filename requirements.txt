@@ -1,6 +1,7 @@
-flask==2.3.3
-playwright==1.40.0
-python-dotenv==1.0.0
-pytesseract==0.3.10
-pillow==10.0.1
-requests==2.31.0
+flask
+playwright
+python-dotenv
+pytesseract
+pillow
+requests
+gunicorn
